@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แผนที่กือดาจีนอ</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
+
+
+<style>
+:root{
+  --red:#8b0000;
+  --gold:#d4af37;
+  --dark:#534c4c;
+  --panel:#d82222;
+  --text:#f5e6c8;
+}
+
+body{
+  margin:0;
+  font-family:'Noto Sans Thai',sans-serif;
+  background:var(--dark);
+  color:var(--text);
+}
+
+/* HEADER */
+.header{
+  height:60px;
+  background:linear-gradient(90deg,var(--red),#2b0000);
+  display:flex;
+  align-items:center;
+  padding:0 20px;
+  color:#fff;
+  font-weight:700;
+}
+
+/* MAP */
+#map{
+  position:absolute;
+  top:60px;
+  left:300px;
+  right:0;
+  bottom:0;
+}
+
+/* SIDEBAR */
+.sidebar{
+  position:absolute;
+  top:60px;
+  left:0;
+  width:300px;
+  bottom:0;
+  background:var(--panel);
+  overflow-y:auto;
+  padding:15px;
+}
+
+/* SEARCH */
+#search{
+  width:100%;
+  padding:8px;
+  border-radius:8px;
+  border:none;
+  margin-bottom:10px;
+}
+
+/* CARD */
+.card{
+  background:#1c1c1c;
+  margin-bottom:10px;
+  padding:10px;
+  border-radius:10px;
+  cursor:pointer;
+  transition:0.3s;
+  border-left:4px solid var(--gold);
+}
+.card:hover{
+  background:#2b0000;
+}
+
+/* BUTTON */
+.btn{
+  display:inline-block;
+  margin-top:6px;
+  padding:5px 8px;
+  font-size:14px;
+  border-radius:6px;
+  text-decoration:none;
+  color:#fff;
+  background:var(--red);
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">📍 แผนที่ท่องเที่ยวกือดาจีนอ</div>
+
+<div class="sidebar">
+<input type="text" id="search" placeholder="ค้นหาสถานที่">
+<div id="list"></div>
+</div>
+
+<div id="map"></div>
+
+<script>
+
+var map = L.map('map').setView([6.871494005499125,101.25734509758644],18);
+
+// 🛰 Google Hybrid (เหมือนในรูป มีชื่อถนน)
+L.tileLayer(
+'https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',{
+  subdomains:['0','1','2','3'],
+  maxZoom:20
+}).addTo(map);
+    
+function createColorMarker(color){
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="
+        width:28px;
+        height:28px;
+        background:${color};
+        border:3px solid white;
+        border-radius:50% 50% 50% 0;
+        transform:rotate(-45deg);
+        box-shadow:0 4px 10px rgba(0,0,0,0.6);
+      "></div>
+    `,
+    iconSize: [20, 20],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -28]
+  });
+}
+
+/* 📍 DATA กือดาจีนอ */
+var places = [
+{
+name:"บ้านขุนพิทักษ์รายา",
+lat:6.871344623204324,lng:101.25594703382605,
+detail:"เป็นบ้านขุนนางไทยที่มีหน้าที่เก็บภาษีการค้าต่าง ๆ ซึ่งทางลูกหลานได้มีการอนุรักษ์บ้านขุนพิทักษ์รายาให้คนรุ่นหลัง ให้เป็นแหล่งเรียนรู้ และเป็นสถานที่ท่องเที่ยวประจำจังหวัด",
+type:"วัฒนธรรม",
+img:"img/1.jpg",
+link:"https://www.google.com/maps?q=6.871344623204324,101.2559470338260"
+},
+{
+name:"บ้านเลขที่1",
+lat: 6.871571751964863,lng:101.25615050713151,
+detail:"เป็นบ้านทรงจีน 2 ชั้น ตั้งอยู่ตรงหัวมุมถนนอาเนาะรู บ้านเลขที่ 1 ไม่ใช่บ้านหลังแรกของย่านเมืองเก่าแต่เป็นบ้านที่มีเลขที่เป็นลำดับแรกของที่นี่หลังมีระบบจัดทำทะเบียนบ้าน",
+type:"ชุมชน",
+img:"img/10.jpg",
+link:"https://www.google.com/maps?q= 6.871571751964863,101.25615050713151"
+},
+{
+name:"บ้านเลขที่5",
+lat:6.871415467496949,lng:101.25624827853595,
+detail:"บ้านที่สะท้อนวัฒนธรรมจีนผสมมลายู",
+type:"ชุมชน",
+img:"img/7.jpeg",
+link:"https://www.google.com/maps?q=6.871415467496949,101.25624827853595"
+},
+{
+name:"บ้านธรรมศาลา",
+lat:6.871307513820589,lng:101.25671833130829,  
+detail:"สถานที่ประกอบพิธีกรรมทางศาสนา เป็นบ้านเก่าแก่อายุเกิน 100 ปี (สร้างราว พ.ศ. 2463) เดิมเป็นบ้านของนายต้วนเหม่ง สถาปัตยกรรมแบบจีนที่ใช้เป็นที่เก็บอัฐิบรรพบุรุษชาวจีน",
+type:"วัฒนธรรม",
+img:"img/5.jpg",
+link:"https://www.google.com/maps?q=6.871307513820589,101.25671833130829"
+},
+{
+name:"บ้านกงสี",
+lat:6.8714359048077505,lng:101.2569832352817, 
+detail:"บ้านเก่าแก่ของตระกูลสำคัญ บ้านเดิมของหลวงสำเร็จกิจกรจางวาง (ปุ่ย แซ่ตัน) ชาวจีนฮกเกี้ยนที่มาตั้งถิ่นฐานในสมัยรัชกาลที่ 3",
+type:"ประวัติศาสตร์",
+img:"img/9.jpg",
+link:"https://www.google.com/maps?q=6.8714359048077505,101.2569832352817"
+},
+{
+name:"บ้านฮกหิ้น",
+lat:6.871287138727544,lng:101.25693169714695,
+detail:"บ้านจีนโบราณที่มีสถาปัตยกรรมโดดเด่น เป็นอาคารเก่าแก่ที่มีความสำคัญทางประวัติศาสตร์และสถาปัตยกรรมอย่างยิ่ง  แต่ได้รับการ บูรณะและปรับปรุง ให้กลับมามีชีวิตชีวาอีกครั้ง โดยยังคงรักษาโครงสร้างและรายละเอียดทางสถาปัตยกรรมดั้งเดิมไว้ เพื่อเป็นแหล่งเรียนรู้และจุดท่องเที่ยวทางวัฒนธรรม",
+type:"วัฒนธรรม",
+img:"img/4.jpg",
+link:"https://www.google.com/maps?q=6.871287138727544,101.25693169714695"
+},
+{
+name:"บ้านตึกขาว",
+lat:6.871401673684214,lng:101.25693169714695,
+detail:"อาคารสีขาวที่เป็นเอกลักษณ์ของชุมชน เป็นบ้านของคุณพระจีนคณานุรักษ์ เป็นบ้านทรงจีนโบราณ ในสมัยรัชกาลที่ 5 เคยแวะประทับเมื่อครั้งเสด็จประพาส ภายหลังได้มีการปรับปรุงจากตึกจีนโบราณเป็นตึกทรงทันสมัย",
+type:"แลนด์มาร์ค",
+img:"img/12.jpg",
+link:"https://www.google.com/maps?q=6.871401673684214,101.25693169714695"
+},
+{
+name:"ศาลเจ้าแม่ลิ้มกอเหนี่ยว", 
+lat:6.87136322733278,lng:101.25810481112418,  
+detail:"เป็นศาลศักดิ์สิทธิ์ที่อยู่คู่เมืองปัตตานีมาตั้งแต่สมัยโบราณ ชาวบ้านต่างให้ความเคารพนับถือ เดินทางมาสักการะบูชาเพื่อขอให้ประสบความสำเร็จในด้านต่างๆ  เป็นสิ่งยึดเหนี่ยวจิตใจ และศูนย์รวมศรัทธา",
+type:"ศาสนา",
+img:"img/2.jpg",
+link:"https://www.google.com/maps?q=6.87136322733278,101.25810481112418"
+},
+{
+name:"พิพิธภัณฑ์ลิ้มกอเหนี่ยว",  
+lat:6.871418639635056,lng:101.2582917853378,
+detail:"แหล่งเรียนรู้ประวัติศาสตร์ท้องถิ่น แหล่งรวบรวมศิลปะภาพถ่าย วิชาการต่างๆ เป็นศูนย์เรียนรู้ ประวัติชุมชนจีนโบราณ ที่เริ่มเข้ามาอยู่ในปัตตานี ตั้งแต่สมัยลิ่มโต๊ะเคี่ยม และเจ้าแม่ลิ้มกอเหนี่ยว และประวัติองค์พระจีนที่สำคัญ ๆ ในศาลเจ้า",
+type:"พิพิธภัณฑ์",
+img:"img/8.jpg",
+link:"https://www.google.com/maps?q=6.871418639635056,101.2582917853378"
+},
+{
+name:"ตลาดขงจื้อ", 
+lat:6.871209787099311,lng:101.25745348366858,
+detail:"ตลาดท้องถิ่น เปิดตลาดในบรรยากาศรื่นรมย์ในย่านเมืองเก่า",
+type:"อาหาร",
+img:"img/3.jpg",
+link:"https://www.google.com/maps?q=6.871209787099311,101.25745348366858"
+}
+];
+
+var list = document.getElementById("list");
+
+
+
+/* RENDER */
+function show(data){
+  let list = document.getElementById("list");
+  list.innerHTML="";
+
+  data.forEach(p=>{
+
+    let div = document.createElement("div");
+    div.className="col-lg-3 col-md-6";
+
+    div.innerHTML = `
+    <div class="card card-tour p-3" style="margin-bottom:15px;background:#1c1c1c;border-radius:12px;">
+      
+      <h5 style="color:#d4af37;">${p.name}</h5>
+      <p style="font-size:13px;">${p.detail}</p>
+
+      <a href="${p.img}" data-lightbox="tour" data-title="${p.name}">
+        <img src="${p.img}" class="tour-img" 
+        style="width:100%;height:150px;object-fit:cover;border-radius:10px;">
+      </a>
+
+      <br>
+
+      <a href="${p.link}" target="_blank" 
+         style="display:inline-block;margin-top:8px;padding:6px 10px;background:#8b0000;color:#fff;border-radius:6px;text-decoration:none;">
+         📍 ไป Google Maps
+      </a>
+
+    </div>
+    `;
+
+    list.appendChild(div);
+  });
+}
+show(places);
+
+function renderMarkers(data){
+
+  map.eachLayer(layer=>{
+    if(layer instanceof L.Marker){
+      map.removeLayer(layer);
+    }
+  });
+
+  data.forEach((p,index)=>{
+
+    // 🎨 ไล่สีเหมือนในรูป
+    let colors = ["#d4af37","#ff9800","#ff4d4d","#00c853","#2196f3"];
+    let color = colors[index % colors.length];
+
+    let marker = L.marker([p.lat, p.lng], {
+      icon: createColorMarker(color)
+    }).addTo(map);
+
+    marker.bindPopup(`
+      <div style="text-align:center;">
+        <h4 style="color:#d4af37;">${p.name}</h4>
+        <img src="${p.img}" 
+        style="width:200px;height:120px;object-fit:cover;border-radius:10px;">
+        <p style="font-size:12px;">${p.detail}</p>
+        <a href="${p.link}" target="_blank">📍 Google Maps</a>
+      </div>
+    `);
+
+  });
+}
+  function show(data){
+  let list = document.getElementById("list");
+  list.innerHTML="";
+
+  data.forEach(p=>{
+    let div = document.createElement("div");
+    div.className="col-lg-3 col-md-6";
+
+    div.innerHTML = `
+    <div class="card card-tour p-3" style="margin-bottom:15px;background:#1c1c1c;border-radius:12px;">
+      
+      <h5 style="color:#d4af37;">${p.name}</h5>
+      <p style="font-size:13px;">${p.detail}</p>
+
+      <a href="${p.img}" data-lightbox="tour" data-title="${p.name}">
+        <img src="${p.img}" style="width:100%;height:150px;object-fit:cover;border-radius:10px;">
+      </a>
+
+      <a href="${p.link}" target="_blank" 
+      style="display:inline-block;margin-top:8px;padding:6px 10px;background:#8b0000;color:#fff;border-radius:6px;text-decoration:none;">
+      📍 ไป Google Maps
+      </a>
+    </div>
+    `;
+
+    // 👉 คลิก card แล้ว zoom ไป marker
+    div.onclick = ()=>{
+      map.setView([p.lat,p.lng],18);
+    };
+
+    list.appendChild(div);
+  });
+
+  // ✅ เรียก marker
+  renderMarkers(data);
+}
+
+
+/* SEARCH */
+document.getElementById("search").addEventListener("keyup",function(){
+  let k=this.value.toLowerCase();
+  let f=places.filter(p=>p.name.toLowerCase().includes(k));
+  show(f);
+});
+</script
+
+</body>
+</html>
